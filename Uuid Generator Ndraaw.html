@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Andra UUID Tool</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #fff;
+        }
+        header {
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        header p {
+            font-size: 1.1em;
+            opacity: 0.8;
+        }
+        main {
+            width: 90%;
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .controls input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .controls button {
+            padding: 10px 15px;
+            background-color: #4fd1c5;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            color: #2d3748;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .controls button:hover {
+            background-color: #38b2ac;
+        }
+        .uuid-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .uuid-item {
+            background: rgba(255,255,255,0.15);
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            word-break: break-word;
+        }
+        .uuid-text {
+            flex: 1;
+            font-size: 16px;
+            user-select: text;
+        }
+        .uuid-item button {
+            margin-left: 10px;
+            padding: 6px 12px;
+            background-color: #48bb78;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .actions button {
+            flex: 1;
+            padding: 10px;
+            background-color: #f6ad55;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            color: #2d3748;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .actions button:hover {
+            background-color: #ed8936;
+        }
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s, transform 0.4s;
+            transform: translateY(20px);
+            font-size: 14px;
+        }
+        #toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>UUID Generator</h1>
+    <p>Created By Andra</p>
+</header>
+
+<main>
+    <div class="controls">
+        <input type="number" id="count" min="1" value="1" placeholder="Jumlah UUID">
+        <button onclick="generateUUIDs()">Generate</button>
+    </div>
+
+    <div class="uuid-list" id="uuidList">
+        <!-- UUIDs will appear here -->
+    </div>
+
+    <div class="actions" id="extraActions" style="display:none;">
+        <button onclick="copyAll()">Copy All</button>
+        <button onclick="downloadAll()">Download .txt</button>
+    </div>
+</main>
+
+<div id="toast">Copied!</div>
+
+<script>
+// Clipboard copy function with fallback
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed"; // avoid scrolling to bottom
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+        document.execCommand('copy');
+        showToast('Copied (fallback)!');
+    } catch (err) {
+        console.error('Fallback: Oops, unable to copy', err);
+    }
+    document.body.removeChild(textArea);
+}
+
+function copyText(text) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function() {
+            showToast('Copied!');
+        }, function(err) {
+            console.error('Async: Could not copy text: ', err);
+            fallbackCopyTextToClipboard(text);
+        });
+    } else {
+        fallbackCopyTextToClipboard(text);
+    }
+}
+
+function generateUUID() {
+    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c/4).toString(16)
+    );
+}
+
+function generateUUIDs() {
+    const list = document.getElementById('uuidList');
+    list.innerHTML = '';
+    const count = parseInt(document.getElementById('count').value) || 1;
+    for (let i = 0; i < count; i++) {
+        const uuid = generateUUID();
+        const div = document.createElement('div');
+        div.className = 'uuid-item';
+        const uuidTextDiv = document.createElement('div');
+        uuidTextDiv.className = 'uuid-text';
+        uuidTextDiv.innerText = uuid;
+        const copyButton = document.createElement('button');
+        copyButton.innerText = 'Copy';
+        copyButton.onclick = function() {
+            copyText(uuidTextDiv.innerText);
+        };
+        div.appendChild(uuidTextDiv);
+        div.appendChild(copyButton);
+        list.appendChild(div);
+    }
+    document.getElementById('extraActions').style.display = count > 0 ? 'flex' : 'none';
+}
+
+function copyAll() {
+    const uuids = Array.from(document.querySelectorAll('.uuid-text'))
+                  .map(div => div.innerText)
+                  .join('\n');
+    copyText(uuids);
+}
+
+function downloadAll() {
+    const uuids = Array.from(document.querySelectorAll('.uuid-text'))
+                  .map(div => div.innerText)
+                  .join('\n');
+    const blob = new Blob([uuids], {type: 'text/plain'});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'uuids.txt';
+    link.click();
+    showToast('Download started!');
+}
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.innerText = message;
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 1500);
+}
+</script>
+
+</body>
+</html>
